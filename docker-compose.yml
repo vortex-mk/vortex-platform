@@ -1,0 +1,183 @@
+name: vortex
+
+services:
+    postgres:
+      image: postgres:16-alpine
+      environment:
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: admin
+        POSTGRES_DB: postgres
+      ports:
+        - "5432:5432"
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+        - ./init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+        interval: 5s
+        timeout: 5s
+        retries: 20
+
+    rabbitmq:
+      image: rabbitmq:3-management-alpine
+      environment:
+        RABBITMQ_DEFAULT_USER: vortex_user
+        RABBITMQ_DEFAULT_PASS: secret123
+        RABBITMQ_DEFAULT_VHOST: vortex_vhost
+      ports:
+        - "5672:5672"
+        - "15672:15672"
+      volumes:
+        - rabbitmq_data:/var/lib/rabbitmq
+      healthcheck:
+        test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+        interval: 10s
+        timeout: 10s
+        retries: 20
+    
+    seaweedfs:
+      image: chrislusf/seaweedfs:3.94_large_disk
+      command: ["server", "-s3"]
+      ports:
+        - "8333:8333"
+        - "8888:8888"
+        - "18080:8080"
+      volumes:
+        - seaweed_data:/data
+
+    guardian-migrate:
+      build:
+        context: ./guardian
+      command: sh -lc '/app/.venv/bin/alembic upgrade head'
+      environment:
+        PYTHONPATH: src
+        DATABASE_URL: postgresql+asyncpg://postgres:admin@postgres:5432/guardian
+      depends_on:
+        postgres:
+          condition: service_healthy
+        rabbitmq:
+          condition: service_healthy
+
+    guardian:
+      build:
+        context: ./guardian
+
+      environment:
+        PYTHONPATH: src
+        DATABASE_URL: postgresql+asyncpg://postgres:admin@postgres:5432/guardian
+        JWT_SECRET_KEY: oW7moRbNvb_6cw0NUNged2I8J_DoVUZVfKIwGfqhHaM
+        ACCESS_TOKEN_EXPIRE_MINUTES: 360
+        RABBITMQ_URL: amqp://vortex_user:secret123@rabbitmq:5672/vortex_vhost
+        AUTH_INTERNAL_SECRET: your-secret-key-here
+        OAUTH_CLIENT_ID: 495337892238-v5c3ji7h1n6nchrlt68jap5pac4mkhvj.apps.googleusercontent.com
+
+      ports:
+        - "8003:8003"
+
+      healthcheck:
+        test: ["CMD-SHELL", "curl -fsS http://localhost:8003/auth/health || exit 1"]
+        interval: 5s
+        timeout: 3s
+        retries: 20
+        start_period: 20s
+
+      depends_on:
+        postgres:
+          condition: service_healthy
+        rabbitmq:
+          condition: service_healthy
+        guardian-migrate:
+          condition: service_completed_successfully
+
+
+    vortex-migrate:
+      build:
+        context: ./vortex
+        target: migrator
+      environment:
+        DATABASE_URL: postgres://postgres:admin@postgres:5432/vortex
+      depends_on:
+        postgres:
+          condition: service_healthy
+
+    vortex:
+      build:
+        context: ./vortex
+
+      environment:
+        SERVER__HOST: 0.0.0.0
+        SERVER__PORT: 3000
+        RUST_LOG: info,vortex=debug
+        RABBITMQ_URL: amqp://vortex_user:secret123@rabbitmq:5672/vortex_vhost
+        EMBEDDING_SERVICE__BASE_URL: http://embedding-service:8000
+        EMBEDDING_SERVICE__TIMEOUT_SECS: 30
+        DATABASE_URL: postgres://postgres:admin@postgres:5432/vortex
+        VORTEX_INTERNAL_SECRET: your-secret-key-here
+        JWT_SECRET: oW7moRbNvb_6cw0NUNged2I8J_DoVUZVfKIwGfqhHaM
+        STORAGE__ENDPOINT_URL: http://seaweedfs:8333
+        STORAGE__PUBLIC_ENDPOINT_URL: http://localhost:8333
+        STORAGE__BUCKET_NAME: documents
+        STORAGE__ACCESS_KEY: admin
+        STORAGE__SECRET_KEY: key
+        STORAGE__REGION: us-east-1
+
+      ports:
+        - "3000:3000"
+
+      depends_on:
+        postgres:
+          condition: service_healthy
+        rabbitmq:
+          condition: service_healthy
+        seaweedfs:
+          condition: service_started
+        vortex-migrate:
+          condition: service_completed_successfully
+
+      healthcheck:
+        test: ["CMD-SHELL", "curl -fsS http://localhost:3000/health || exit 1"]
+        interval: 5s
+        timeout: 3s
+        retries: 20
+        start_period: 20s
+
+    proxy-gateway:
+      build:
+        context: ./proxy-gateway
+      environment:
+        PORT: 8080
+        JWT_SECRET: oW7moRbNvb_6cw0NUNged2I8J_DoVUZVfKIwGfqhHaM
+        TRUSTED_PROXIES: 127.0.0.1,172.16.0.0/12
+        VORTEX_API_URL: http://vortex:3000
+        AUTH_API_URL: http://guardian:8003
+        RATE_LIMIT_RPM: 600
+        VORTEX_INTERNAL_SECRET: your-secret-key-here
+        AUTH_INTERNAL_SECRET: your-secret-key-here
+      ports:
+        - "8080:8080"
+      depends_on:
+        guardian:
+          condition: service_healthy
+        vortex:
+          condition: service_healthy
+
+    vortex-ui:
+      build:
+        context: ./vortex-ui
+        args:
+          NEXT_PUBLIC_AUTH_API_BASE_URL: http://proxy-gateway:8080
+          NEXT_PUBLIC_API_BASE_URL: http://proxy-gateway:8080
+          OAUTH_CLIENT_ID: 495337892238-v5c3ji7h1n6nchrlt68jap5pac4mkhvj.apps.googleusercontent.com
+      environment:
+        PORT: 4321
+        HOSTNAME: 0.0.0.0
+      ports:
+        - "4321:4321"
+      depends_on:
+        proxy-gateway:
+          condition: service_started
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  seaweed_data:

@@ -1,0 +1,15 @@
+[submodule "vortex"]
+	path = vortex
+	url = git@github.com:Vortex-Mind/vortex.git
+[submodule "guardian"]
+	path = guardian
+	url = git@github.com:Vortex-Mind/guardian.git
+[submodule "proxy-gateway"]
+	path = proxy-gateway
+	url = git@github.com:Vortex-Mind/proxy-gateway.git
+[submodule "vortex-ui"]
+	path = vortex-ui
+	url = git@github.com:Vortex-Mind/vortex-ui.git
+[submodule "embedding-service"]
+	path = embedding-service
+	url = git@github.com:Vortex-Mind/embedding-service.git
