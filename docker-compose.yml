@@ -108,7 +108,7 @@ services:
         SERVER__HOST: 0.0.0.0
         SERVER__PORT: 3000
         RUST_LOG: info,vortex=debug
-        RABBITMQ_URL: amqp://vortex_user:secret123@rabbitmq:5672/vortex_vhost
+        RABBITMQ_URL: amqp://vortex_user:o+T&KecaSv3KVNZ$)RzSI3ORV#UM49E@rabbitmq:5672/vortex_vhost
         EMBEDDING_SERVICE__BASE_URL: http://embedding-service:8000
         EMBEDDING_SERVICE__TIMEOUT_SECS: 30
         DATABASE_URL: postgres://vortex_user:2l8)ngJEe99OZ(Um+shwOoVgk*4()JP@postgres:5432/vortex
