@@ -115,7 +115,7 @@ services:
         VORTEX_INTERNAL_SECRET: your-secret-key-here
         JWT_SECRET: oW7moRbNvb_6cw0NUNged2I8J_DoVUZVfKIwGfqhHaM
         STORAGE__ENDPOINT_URL: http://seaweedfs:8333
-        STORAGE__PUBLIC_ENDPOINT_URL: http://167.233.23.79:8333
+        STORAGE__PUBLIC_ENDPOINT_URL: https://storage.vortexnote.com
         STORAGE__BUCKET_NAME: documents
         STORAGE__ACCESS_KEY: admin
         STORAGE__SECRET_KEY: key
