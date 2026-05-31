@@ -171,10 +171,14 @@ services:
       environment:
         PORT: 4321
         HOSTNAME: 0.0.0.0
+        STORAGE_PUBLIC_HOST: storage.vortexnote.com
+        STORAGE_INTERNAL_ORIGIN: http://seaweedfs:8333
       ports:
         - "4321:4321"
       depends_on:
         proxy-gateway:
+          condition: service_started
+        seaweedfs:
           condition: service_started
 
 volumes:
