@@ -45,6 +45,28 @@ services:
       volumes:
         - seaweed_data:/data
 
+    qdrant:
+      image: qdrant/qdrant:v1.17.0
+      ports:
+        - "6333:6333"
+      volumes:
+        - qdrant_data:/qdrant/storage
+
+    embedding-service:
+      build:
+        context: ./embedding-service
+      environment:
+        QDRANT_URL: http://qdrant:6333
+        SEAWEED_CONNECTION_URL: http://seaweedfs:8333
+        BUCKET_NAME: documents
+        EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
+        EMBEDDING_INTERNAL_SECRET: your-secret-key-here
+      depends_on:
+        qdrant:
+          condition: service_started
+        seaweedfs:
+          condition: service_started
+
     guardian-migrate:
       build:
         context: ./guardian
@@ -109,8 +131,9 @@ services:
         SERVER__PORT: 3000
         RUST_LOG: info,vortex=debug
         RABBITMQ_URL: amqp://vortex_user:Cn4ygtlGcU9TOHH5zTgjHp6xwiidstdQ@rabbitmq:5672/vortex_vhost
-        EMBEDDING_SERVICE__BASE_URL: http://embedding-service:8000
+        EMBEDDING_SERVICE__BASE_URL: http://proxy-gateway:8080/embedding
         EMBEDDING_SERVICE__TIMEOUT_SECS: 30
+        EMBEDDING_SERVICE__INTERNAL_SECRET: your-secret-key-here
         DATABASE_URL: postgres://vortex_user:2l8)ngJEe99OZ(Um+shwOoVgk*4()JP@postgres:5432/vortex
         VORTEX_INTERNAL_SECRET: your-secret-key-here
         JWT_SECRET: oW7moRbNvb_6cw0NUNged2I8J_DoVUZVfKIwGfqhHaM
@@ -150,9 +173,11 @@ services:
         TRUSTED_PROXIES: 127.0.0.1,172.16.0.0/12
         VORTEX_API_URL: http://vortex:3000
         AUTH_API_URL: http://guardian:8003
+        EMBEDDING_API_URL: http://embedding-service:8000
         RATE_LIMIT_RPM: 600
         VORTEX_INTERNAL_SECRET: your-secret-key-here
         AUTH_INTERNAL_SECRET: your-secret-key-here
+        EMBEDDING_INTERNAL_SECRET: your-secret-key-here
       ports:
         - "8080:8080"
       depends_on:
@@ -160,6 +185,8 @@ services:
           condition: service_healthy
         vortex:
           condition: service_healthy
+        embedding-service:
+          condition: service_started
 
     vortex-ui:
       build:
@@ -185,3 +212,4 @@ volumes:
   postgres_data:
   rabbitmq_data:
   seaweed_data:
+  qdrant_data:
