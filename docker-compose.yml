@@ -200,10 +200,6 @@ services:
     cloudflared:
       image: cloudflare/cloudflared:latest
       command: tunnel --config /etc/cloudflared/config.yml run
-      dns:
-        - 127.0.0.11
-      extra_hosts:
-        - "proxy-gateway:host-gateway"
       environment:
         TUNNEL_TOKEN: ${TUNNEL_TOKEN}
       volumes:
