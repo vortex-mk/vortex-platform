@@ -7,8 +7,7 @@ services:
         POSTGRES_USER: vortex_user
         POSTGRES_PASSWORD: 2l8)ngJEe99OZ(Um+shwOoVgk*4()JP
         POSTGRES_DB: postgres
-      ports:
-        - "5432:5432"
+      # ports:    # internal only — Docker network access
       volumes:
         - postgres_data:/var/lib/postgresql/data
         - ./init.sh:/docker-entrypoint-initdb.d/init.sh:ro
@@ -24,9 +23,7 @@ services:
         RABBITMQ_DEFAULT_USER: vortex_user
         RABBITMQ_DEFAULT_PASS: Cn4ygtlGcU9TOHH5zTgjHp6xwiidstdQ
         RABBITMQ_DEFAULT_VHOST: vortex_vhost
-      ports:
-        - "5672:5672"
-        - "15672:15672"
+      # ports:    # internal only
       volumes:
         - rabbitmq_data:/var/lib/rabbitmq
       healthcheck:
@@ -38,17 +35,13 @@ services:
     seaweedfs:
       image: chrislusf/seaweedfs:3.94_large_disk
       command: ["server", "-s3"]
-      ports:
-        - "8333:8333"
-        - "8888:8888"
-        - "18080:8080"
+      # ports:    # internal only
       volumes:
         - seaweed_data:/data
 
     qdrant:
       image: qdrant/qdrant:v1.17.0
-      ports:
-        - "6333:6333"
+      # ports:    # internal only
       volumes:
         - qdrant_data:/qdrant/storage
 
@@ -93,8 +86,7 @@ services:
         AUTH_INTERNAL_SECRET: your-secret-key-here
         OAUTH_CLIENT_ID: 495337892238-v5c3ji7h1n6nchrlt68jap5pac4mkhvj.apps.googleusercontent.com
 
-      ports:
-        - "8003:8003"
+      # ports:    # internal only
 
       healthcheck:
         test: ["CMD-SHELL", "curl -fsS http://localhost:8003/auth/health || exit 1"]
@@ -144,8 +136,7 @@ services:
         STORAGE__SECRET_KEY: key
         STORAGE__REGION: us-east-1
 
-      ports:
-        - "3000:3000"
+      # ports:    # internal only — proxied through proxy-gateway
 
       depends_on:
         postgres:
@@ -174,12 +165,11 @@ services:
         VORTEX_API_URL: http://vortex:3000
         AUTH_API_URL: http://guardian:8003
         EMBEDDING_API_URL: http://embedding-service:8000
+        VORTEX_UI_URL: http://vortex-ui:4321
         RATE_LIMIT_RPM: 600
         VORTEX_INTERNAL_SECRET: your-secret-key-here
         AUTH_INTERNAL_SECRET: your-secret-key-here
         EMBEDDING_INTERNAL_SECRET: your-secret-key-here
-      ports:
-        - "8080:8080"
       depends_on:
         guardian:
           condition: service_healthy
@@ -200,13 +190,21 @@ services:
         HOSTNAME: 0.0.0.0
         STORAGE_PUBLIC_HOST: storage.vortexnote.com
         STORAGE_INTERNAL_ORIGIN: http://seaweedfs:8333
-      ports:
-        - "4321:4321"
       depends_on:
         proxy-gateway:
           condition: service_started
         seaweedfs:
           condition: service_started
+
+    cloudflared:
+      image: cloudflare/cloudflared:latest
+      command: tunnel run
+      environment:
+        - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+      depends_on:
+        proxy-gateway:
+          condition: service_started
+      restart: unless-stopped
 
 volumes:
   postgres_data:
