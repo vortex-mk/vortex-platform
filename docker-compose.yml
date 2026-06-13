@@ -34,7 +34,7 @@ services:
     
     seaweedfs:
       image: chrislusf/seaweedfs:3.94_large_disk
-      command: ["server", "-s3", "-s3.cors=https://app.vortexnote.com"]
+      command: ["server", "-s3"]
       # ports:    # internal only
       volumes:
         - seaweed_data:/data
@@ -130,7 +130,7 @@ services:
         VORTEX_INTERNAL_SECRET: your-secret-key-here
         JWT_SECRET: oW7moRbNvb_6cw0NUNged2I8J_DoVUZVfKIwGfqhHaM
         STORAGE__ENDPOINT_URL: http://seaweedfs:8333
-        STORAGE__PUBLIC_ENDPOINT_URL: https://storage.vortexnote.com
+        STORAGE__PUBLIC_ENDPOINT_URL: https://app.vortexnote.com
         STORAGE__BUCKET_NAME: documents
         STORAGE__ACCESS_KEY: admin
         STORAGE__SECRET_KEY: key
@@ -166,6 +166,7 @@ services:
         AUTH_API_URL: http://guardian:8003
         EMBEDDING_API_URL: http://embedding-service:8000
         VORTEX_UI_URL: http://vortex-ui:4321
+        STORAGE_API_URL: http://seaweedfs:8333
         RATE_LIMIT_RPM: 600
         VORTEX_INTERNAL_SECRET: your-secret-key-here
         AUTH_INTERNAL_SECRET: your-secret-key-here
@@ -188,8 +189,8 @@ services:
       environment:
         PORT: 4321
         HOSTNAME: 0.0.0.0
-        STORAGE_PUBLIC_HOST: storage.vortexnote.com
-        STORAGE_INTERNAL_ORIGIN: http://seaweedfs:8333
+        STORAGE_PUBLIC_HOST: app.vortexnote.com
+        STORAGE_INTERNAL_ORIGIN: http://proxy-gateway:8080
       depends_on:
         proxy-gateway:
           condition: service_started

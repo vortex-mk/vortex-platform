@@ -1,6 +1,4 @@
 ingress:
   - hostname: app.vortexnote.com
     service: http://proxy-gateway:8080
-  - hostname: storage.vortexnote.com
-    service: http://seaweedfs:8333
   - service: http_status:404
