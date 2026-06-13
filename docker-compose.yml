@@ -198,9 +198,11 @@ services:
 
     cloudflared:
       image: cloudflare/cloudflared:latest
-      command: tunnel run
+      command: tunnel --config /etc/cloudflared/config.yml run
       environment:
-        - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+        TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+      volumes:
+        - ./cloudflared/config.yml:/etc/cloudflared/config.yml:ro
       depends_on:
         proxy-gateway:
           condition: service_started
