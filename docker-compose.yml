@@ -34,7 +34,7 @@ services:
     
     seaweedfs:
       image: chrislusf/seaweedfs:3.94_large_disk
-      command: ["server", "-s3"]
+      command: ["server", "-s3", "-s3.cors=https://app.vortexnote.com"]
       # ports:    # internal only
       volumes:
         - seaweed_data:/data
@@ -199,6 +199,10 @@ services:
     cloudflared:
       image: cloudflare/cloudflared:latest
       command: tunnel --config /etc/cloudflared/config.yml run
+      dns:
+        - 127.0.0.11
+      extra_hosts:
+        - "proxy-gateway:host-gateway"
       environment:
         TUNNEL_TOKEN: ${TUNNEL_TOKEN}
       volumes:
