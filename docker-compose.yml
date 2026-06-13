@@ -192,8 +192,8 @@ services:
       build:
         context: ./vortex-ui
         args:
-          NEXT_PUBLIC_AUTH_API_BASE_URL: http://proxy-gateway:8080
-          NEXT_PUBLIC_API_BASE_URL: http://proxy-gateway:8080
+          PUBLIC_AUTH_API_BASE_URL: http://proxy-gateway:8080
+          PUBLIC_API_BASE_URL: http://proxy-gateway:8080
           OAUTH_CLIENT_ID: 495337892238-v5c3ji7h1n6nchrlt68jap5pac4mkhvj.apps.googleusercontent.com
       environment:
         PORT: 4321
