@@ -84,7 +84,7 @@ services:
         ACCESS_TOKEN_EXPIRE_MINUTES: 360
         RABBITMQ_URL: amqp://vortex_user:Cn4ygtlGcU9TOHH5zTgjHp6xwiidstdQ@rabbitmq:5672/vortex_vhost
         AUTH_INTERNAL_SECRET: your-secret-key-here
-        OAUTH_CLIENT_ID: 495337892238-v5c3ji7h1n6nchrlt68jap5pac4mkhvj.apps.googleusercontent.com
+        OAUTH_CLIENT_ID: your-client-here
 
       # ports:    # internal only
 
@@ -185,7 +185,7 @@ services:
         args:
           PUBLIC_AUTH_API_BASE_URL: http://proxy-gateway:8080
           PUBLIC_API_BASE_URL: http://proxy-gateway:8080
-          OAUTH_CLIENT_ID: 495337892238-v5c3ji7h1n6nchrlt68jap5pac4mkhvj.apps.googleusercontent.com
+          OAUTH_CLIENT_ID: [you're client here]
       environment:
         PORT: 4321
         HOSTNAME: 0.0.0.0
